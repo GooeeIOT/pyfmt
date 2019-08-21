@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+MAX_LINE_LENGTH=${MAX_LINE_LENGTH:-100}
+
+set -e
+
+if ! which isort > /dev/null; then
+    echo "You must install isort (pip?)"
+    exit 1
+fi
+if ! which black > /dev/null; then
+    echo "You must install black (pip?)"
+    exit 2
+fi
+
+extra_isort_args=""
+extra_black_args=""
+
+function usage {
+    echo "USAGE: pyfmt [--check] [specific files]"
+    echo "You may also export BASE_CODE_DIR= to point at the code to be formatted"
+    exit 1
+}
+
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    usage
+elif [[ "$1" == "-c" ]] || [[ "$1" == "--check" ]]; then
+    extra_isort_args=" ${extra_isort_args} --check-only "
+    extra_black_args=" ${extra_black_args} --check "
+    shift
+fi
+
+if [ -z $@ ]; then
+    to_fmt=${BASE_CODE_DIR}
+else
+    to_fmt=$@
+fi
+
+## Auto arrange imports
+isort \
+    --force-grid-wrap=0 \
+    --line-width=${MAX_LINE_LENGTH} \
+    --multi-line=3 \
+    --use-parentheses \
+    --recursive \
+    --trailing-comma \
+    ${extra_isort_args} \
+    ${to_fmt}
+
+# Auto format code
+pyver=$(python3 --version | cut -d ' ' -f 2 | cut -c 1-3 | sed 's/\.//')
+black \
+    --line-length ${MAX_LINE_LENGTH} \
+    --target-version py${pyver} \
+    ${extra_black_args} \
+    ${to_fmt}
