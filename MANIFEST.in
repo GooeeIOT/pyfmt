@@ -1,0 +1,3 @@
+include pyfmt/*.pyfmt
+include setup.py README.md LICENSE requirements.txt
+recursive-include contrib
