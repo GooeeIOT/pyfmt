@@ -19,6 +19,9 @@ def main():
         " defaults to $BASE_CODE_DIR or the current directory",
     )
     parser.add_argument(
+        "--skip", default="", help="Directory (ie. env/foo) or files (ie. cool.py) to skip."
+    )
+    parser.add_argument(
         "--check",
         action="store_true",
         help="don't write changes, just print the files that would be formatted",
@@ -36,6 +39,7 @@ def main():
 
     exitcode = pyfmt.pyfmt(
         opts.path,
+        skip=opts.skip,
         check=opts.check,
         line_length=opts.line_length,
         extra_isort_args=opts.extra_isort_args,
