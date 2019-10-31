@@ -27,43 +27,63 @@ BLACK_CMD = [
     "{path}",
 ]
 
-def getListOfFiles(dirName):
-    # create a list of file and sub directories 
-    # names in the given directory 
-    listOfFile = os.listdir(dirName)
-    allFiles = list()
-    # Iterate over all the entries
-    for entry in listOfFile:
-        # Create full path
-        fullPath = os.path.join(dirName, entry)
-        # If entry is a directory then get the list of files in this directory 
-        if os.path.isdir(fullPath):
-            allFiles = allFiles + getListOfFiles(fullPath)
-        else:
-            allFiles.append(fullPath)
-                
-    return allFiles
+def pyfmt_title():
+    """
+    Display a cool ascii art title
+    """
+    pyfmt_splash = [
+        "               __           _    ",
+        "              / _|         | |   ",
+        "  _ __  _   _| |_ _ __ ___ | |_  ",
+        " | '_ \| | | |  _| '_ ` _ \| __| ",
+        " | |_) | |_| | | | | | | | | |_  ",
+        " | .__/ \__, |_| |_| |_| |_|\__| ",
+        " | |     __/ |                   ",
+        " |_|    |___/                    "
+    ]
+    print("\033[94m")
+    for part in pyfmt_splash:
+        print(f"{part.center(os.get_terminal_size().columns, ' ')}" )
+    print("\033[0m")
 
+def find_all_files_and_dirs():
+    """
+    Map out all files and directories in the current
+    working directory
+    """
+    all_files = []
+    all_dirs = []
+    for root, dirs, files in os.walk("."):
+        for name in files:
+            # Saving filename
+            all_files.append(name)
+        for name in dirs:
+            # Saving directory name
+            all_dirs.append(os.path.abspath(os.path.join(root, name)))
+    # Remove duplicates
+    all_files = list(set(all_files))
+
+    return all_files, all_dirs
+
+def display_divider(title="", character="=", color_code="\033[94m"):
+    """
+    Divider between sections of program.
+    """
+    if title:
+        print("\n" + "{}".format(color_code) + "  {}  ".format(title.upper()).center(os.get_terminal_size().columns, "{}".format(character)) + "\033[0m")
+    else:
+        print("\n" + "{}".format(color_code) + "".center(os.get_terminal_size().columns, "{}".format(character)) + "\033[0m")
 
 
 def pyfmt(path, skip="", check=False, line_length=100, extra_isort_args="", extra_black_args="") -> int:
     """Run isort and black with the given params and print the results."""
-    timer_start = time.time()
-    if skip:
-        # Map out all sub directories with files
-        all_files = []
-        all_dirs = []
-        for root, dirs, files in os.walk("."):
-            for name in files:
-                # Saving filename
-                all_files.append(name)
-            for name in dirs:
-                # Saving directory name
-                all_dirs.append(os.path.abspath(os.path.join(root, name)))
-        # Remove duplicates
-        all_files = list(set(all_files))
+    pyfmt_title()  # Display title
+    timer_start = time.time()  # Measure how long everything takes
 
-        # Parse comma seperated input
+    if skip:
+        # Map out current working directory
+        all_files, all_dirs = find_all_files_and_dirs()
+        # If specified files and directories exist, store the filenames
         skips = skip.split(',')
         filenames_to_skip = []
         for item in skips:
@@ -77,35 +97,30 @@ def pyfmt(path, skip="", check=False, line_length=100, extra_isort_args="", extr
                     for filename in filenames:
                         if filename.split('.')[-1] == 'py' or filename.split('.')[-1] == 'pyi':
                             files_in_dir.append(filename)
-                    # files_in_dir += [file for file in filenames]
                 filenames_to_skip.extend(files_in_dir)
             else:
-                print('ERROR: File or directory marked as skipped not found! Aborting pyfmt ...')
-
-        # Remove duplicate filenames
-        # filenames_to_skip = list(set(filenames_to_skip))
-
-        print(filenames_to_skip)
-        print('Number of files to be skipped: {}'.format(len(filenames_to_skip)))
-
-        # for file in filenames_to_skip:
-        #     print(file.split('.')[-1])
-
-        # filenames_to_skip.append('black')
-
-        # Make a continous string
-        filenames_to_skip_str = ""
+                print('CRITICAL: One of the files or directories marked as skipped not found ("{}").'.format(item))
+                print('CRITICAL: Check spelling or existence of file or directory')
+                print('CRITICAL: Aborting pyfmt ...')
+                sys.exit()
+        # Display Files skipped
+        display_divider(title="SKIPPING FILES")
+        for filename_to_skip in filenames_to_skip:
+            print(f"SKIPPING: {filename_to_skip}")
+        print('\nNumber of files to be skipped: {}'.format(len(filenames_to_skip)))
+        # Make a continuos string of arguments for 
+        #   isort - must be separate --skip for each file
+        #   black - regex for exact filename (ie. file1|file2|etc.)
+        isort_filenames_to_skip = ""
+        black_filenames_to_skip = ""
         for filename in filenames_to_skip:
-            filenames_to_skip_str += '--skip=' + filename + " "
-        filenames_to_skip_str = filenames_to_skip_str[:-1]
-
-        # Adding to the isort arguments
-        extra_isort_args += filenames_to_skip_str
-
-
-
-
-    input('stop here')
+            isort_filenames_to_skip += '--skip=' + filename + " "
+            black_filenames_to_skip += filename + "|"
+        isort_filenames_to_skip = isort_filenames_to_skip[:-1]
+        black_filenames_to_skip = black_filenames_to_skip[:-1]
+        # Adding to the isort and black arguments
+        extra_isort_args += isort_filenames_to_skip
+        extra_black_args += "--exclude=" + black_filenames_to_skip
 
     if check:
         extra_isort_args += " --check-only"
@@ -114,27 +129,26 @@ def pyfmt(path, skip="", check=False, line_length=100, extra_isort_args="", extr
     isort_exitcode = run_formatter(
         ISORT_CMD, path, line_length=line_length, extra_isort_args=extra_isort_args
     )
-    # black_exitcode = run_formatter(
-    #     BLACK_CMD, path, line_length=line_length, extra_black_args=extra_black_args
-    # )
+    black_exitcode = run_formatter(
+        BLACK_CMD, path, line_length=line_length, extra_black_args=extra_black_args
+    )
 
-
-    print('Execution Time: {} seconds'.format(time.time() - timer_start))
-    return isort_exitcode or black_exitcode
+    print('\npyfmt Execution Time: {0:.2f} seconds'.format(time.time() - timer_start))
+    return isort_exitcode #or black_exitcode
 
 
 def run_formatter(cmd, path, **kwargs) -> int:
     """Helper to run a shell command and print prettified output."""
     cmd = shlex.split(" ".join(cmd).format(path=path, **kwargs))
-    print(cmd)
     result = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
 
     prefix = f"{cmd[0]}: "
-    sep = "\n" + (" " * len(prefix))
+    display_divider(title=prefix[:-2])
+    sep = "\n"
     lines = result.stdout.decode().splitlines() + result.stderr.decode().splitlines()
     if "".join(lines) == "":
-        print(f"{prefix}No changes.")
+        print(f"No changes.")
     else:
-        print(f"{prefix}{sep.join(lines)}")
+        print(f"{sep.join(lines)}")
 
     return result.returncode
