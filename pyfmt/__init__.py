@@ -1,10 +1,9 @@
+import os
 import shlex
 import subprocess
 import sys
-from subprocess import PIPE
 import time
-
-import os
+from subprocess import PIPE
 
 TARGET_VERSION = f"py{sys.version_info.major}{sys.version_info.minor}"
 
@@ -27,6 +26,7 @@ BLACK_CMD = [
     "{path}",
 ]
 
+
 def pyfmt_title():
     """
     Display a cool ascii art title
@@ -39,12 +39,13 @@ def pyfmt_title():
         " | |_) | |_| | | | | | | | | |_  ",
         " | .__/ \__, |_| |_| |_| |_|\__| ",
         " | |     __/ |                   ",
-        " |_|    |___/                    "
+        " |_|    |___/                    ",
     ]
     print("\033[94m")
     for part in pyfmt_splash:
-        print(f"{part.center(os.get_terminal_size().columns, ' ')}" )
+        print(f"{part.center(os.get_terminal_size().columns, ' ')}")
     print("\033[0m")
+
 
 def find_all_files_and_dirs():
     """
@@ -65,17 +66,32 @@ def find_all_files_and_dirs():
 
     return all_files, all_dirs
 
+
 def display_divider(title="", character="=", color_code="\033[94m"):
     """
     Divider between sections of program.
     """
     if title:
-        print("\n" + "{}".format(color_code) + "  {}  ".format(title.upper()).center(os.get_terminal_size().columns, "{}".format(character)) + "\033[0m")
+        print(
+            "\n"
+            + "{}".format(color_code)
+            + "  {}  ".format(title.upper()).center(
+                os.get_terminal_size().columns, "{}".format(character)
+            )
+            + "\033[0m"
+        )
     else:
-        print("\n" + "{}".format(color_code) + "".center(os.get_terminal_size().columns, "{}".format(character)) + "\033[0m")
+        print(
+            "\n"
+            + "{}".format(color_code)
+            + "".center(os.get_terminal_size().columns, "{}".format(character))
+            + "\033[0m"
+        )
 
 
-def pyfmt(path, skip="", check=False, line_length=100, extra_isort_args="", extra_black_args="") -> int:
+def pyfmt(
+    path, skip="", check=False, line_length=100, extra_isort_args="", extra_black_args=""
+) -> int:
     """Run isort and black with the given params and print the results."""
     pyfmt_title()  # Display title
     timer_start = time.time()  # Measure how long everything takes
@@ -84,37 +100,41 @@ def pyfmt(path, skip="", check=False, line_length=100, extra_isort_args="", extr
         # Map out current working directory
         all_files, all_dirs = find_all_files_and_dirs()
         # If specified files and directories exist, store the filenames
-        skips = skip.split(',')
+        skips = skip.split(",")
         filenames_to_skip = []
         for item in skips:
             if item in all_files:
-                if item.split('.')[-1] == 'py':
+                if item.split(".")[-1] == "py":
                     filenames_to_skip.extend([item])
             elif os.path.abspath(item) in all_dirs:
                 # Saving all filenames in directory
                 files_in_dir = list()
                 for (dirpath, dirnames, filenames) in os.walk(item):
                     for filename in filenames:
-                        if filename.split('.')[-1] == 'py' or filename.split('.')[-1] == 'pyi':
+                        if filename.split(".")[-1] == "py" or filename.split(".")[-1] == "pyi":
                             files_in_dir.append(filename)
                 filenames_to_skip.extend(files_in_dir)
             else:
-                print('CRITICAL: One of the files or directories marked as skipped not found ("{}").'.format(item))
-                print('CRITICAL: Check spelling or existence of file or directory')
-                print('CRITICAL: Aborting pyfmt ...')
+                print(
+                    'CRITICAL: One of the files or directories marked as skipped not found ("{}").'.format(
+                        item
+                    )
+                )
+                print("CRITICAL: Check spelling or existence of file or directory")
+                print("CRITICAL: Aborting pyfmt ...")
                 sys.exit()
         # Display Files skipped
         display_divider(title="SKIPPING FILES")
         for filename_to_skip in filenames_to_skip:
             print(f"SKIPPING: {filename_to_skip}")
-        print('\nNumber of files to be skipped: {}'.format(len(filenames_to_skip)))
-        # Make a continuos string of arguments for 
+        print("\nNumber of files to be skipped: {}".format(len(filenames_to_skip)))
+        # Make a continuos string of arguments for
         #   isort - must be separate --skip for each file
         #   black - regex for exact filename (ie. file1|file2|etc.)
         isort_filenames_to_skip = ""
         black_filenames_to_skip = ""
         for filename in filenames_to_skip:
-            isort_filenames_to_skip += '--skip=' + filename + " "
+            isort_filenames_to_skip += "--skip=" + filename + " "
             black_filenames_to_skip += filename + "|"
         isort_filenames_to_skip = isort_filenames_to_skip[:-1]
         black_filenames_to_skip = black_filenames_to_skip[:-1]
@@ -133,8 +153,8 @@ def pyfmt(path, skip="", check=False, line_length=100, extra_isort_args="", extr
         BLACK_CMD, path, line_length=line_length, extra_black_args=extra_black_args
     )
 
-    print('\npyfmt Execution Time: {0:.2f} seconds'.format(time.time() - timer_start))
-    return isort_exitcode #or black_exitcode
+    print("\npyfmt Execution Time: {0:.2f} seconds".format(time.time() - timer_start))
+    return isort_exitcode  # or black_exitcode
 
 
 def run_formatter(cmd, path, **kwargs) -> int:
