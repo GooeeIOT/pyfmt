@@ -19,26 +19,27 @@ cd pyfmt
 python setup.py install
 ```
 
-### Install the git hook
+## Contrib
 
-Prevent a `git push` from completing if the formatter runs and there is a code difference from what
-is about to be `push`ed.
+### Example Use in a Git Hook
+
+Prevent a `git push` from completing if `pyfmt --check` returns that there are files that need to still be auto formatted. 
 
 ```console
-ln -sf path/to/pyfmt/git_hooks/pre-push .git/hooks
+ln -sf contrib/git_hooks/pre-push .git/hooks
 ```
 
-This is a check only and does not alter your code. Run `pyfmt` to fix.
+> This is a check only and does not alter your code. Run `pyfmt` manually to autoformat the code.
 
-### Use in a Jenkinsfile
+### Example Use in a Jenkinsfile
 
 You can add [contrib/jenkins/pyfmt.groovy](contrib/jenkins/pyfmt.groovy) to your Jenkins pipeline
-library to use `pyfmt("paths/to your/code")` in a `Jenkinsfile`.
+library so that you can use `pyfmt` as a function in your `Jenkinsfile`s. For example, `pyfmt "src/ tests/"`. Read more about how to set that up at https://jenkins.io/doc/book/pipeline/shared-libraries/ in the "Using Libraries" section.
 
 ## Usage
 
-Be advised with projects in a virtual env: `isort` works best when your virtual env is active.
-Then, imports will sort in the correct way (system packages, 3rd parts packages, local packages).
+*Just FYI*, `isort` works best when your virtual environment is active (if your src relies on one).
+This will then allow imports to sort in the correct way (system packages, 3rd party packages, local/project packages).
 If you are not in your virtual env, the global Python environment will be used which might place
 your local package imports in with the 3rd party package imports.
 
