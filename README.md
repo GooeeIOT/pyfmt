@@ -23,46 +23,75 @@ python setup.py install
 
 ### Example Use in a Git Hook
 
-Prevent a `git push` from completing if `pyfmt --check` returns that there are files that need to still be auto formatted. 
+Prevent a `git commit` if `pyfmt --check --select staged` comes back dirty:
+
+```console
+ln -sf contrib/git_hooks/pre-commit .git/hooks
+```
+
+Prevent a `git push` if `pyfmt --check --select local` comes back dirty:
 
 ```console
 ln -sf contrib/git_hooks/pre-push .git/hooks
 ```
 
-> This is a check only and does not alter your code. Run `pyfmt` manually to autoformat the code.
-
 ### Example Use in a Jenkinsfile
 
 You can add [contrib/jenkins/pyfmt.groovy](contrib/jenkins/pyfmt.groovy) to your Jenkins pipeline
-library so that you can use `pyfmt` as a function in your `Jenkinsfile`s. For example, `pyfmt "src/ tests/"`. Read more about how to set that up at https://jenkins.io/doc/book/pipeline/shared-libraries/ in the "Using Libraries" section.
+library so that you can use `pyfmt` as a function in your `Jenkinsfile`s. For example,
+`pyfmt "src/tests/"`. Read more about how to set that up at
+https://jenkins.io/doc/book/pipeline/shared-libraries/ in the "Using Libraries" section.
 
 ## Usage
 
 *Just FYI*, `isort` works best when your virtual environment is active (if your src relies on one).
-This will then allow imports to sort in the correct way (system packages, 3rd party packages, local/project packages).
-If you are not in your virtual env, the global Python environment will be used which might place
-your local package imports in with the 3rd party package imports.
+*This will then allow imports to sort in the correct way (system packages, 3rd party packages,
+*local/project packages). If you are not in your virtual env, the global Python environment will be
+*used which might place your local package imports in with the 3rd party package imports.
+
+Also FYI, `git` is not required to use `pyfmt`. However, it is required if you are using `--select`
+with anything other than `all` (the default), or if you are using `--commit` or `--commit-msg`,
+since these options are all reliant on the status of your git working tree and index.
 
 ```console
-usage: pyfmt [-h] [--check] [--line-length LINE_LENGTH]
-             [--extra-isort-args EXTRA_ISORT_ARGS]
-             [--extra-black-args EXTRA_BLACK_ARGS]
+usage: pyfmt [-h] [-x SELECT] [-c] [--line-length N]
+             [--commit [ARG [ARG ...]]] [--commit-msg [MSG [MSG ...]]]
+             [--extra-isort-args ARGS] [--extra-black-args ARGS]
              [PATH]
 
 positional arguments:
-  PATH                  path to base directory where pyfmt will be run;
-                        defaults to $BASE_CODE_DIR or the current directory
+  PATH                  path to base directory where pyfmt will be run
+                        (default: $BASE_CODE_DIR | '.')
 
 optional arguments:
   -h, --help            show this help message and exit
-  --check               don't write changes, just print the files that would
-                        be formatted
-  --line-length LINE_LENGTH
-                        max characters per line; defaults to $MAX_LINE_LENGTH
-                        or 100
-  --extra-isort-args EXTRA_ISORT_ARGS
+  -x SELECT, --select SELECT
+                        filter which files to format in PATH:
+                        > all       (default) all files
+                        > staged    files in the index
+                        > modified  files in the index, working tree, and
+                                    untracked files
+                        > head      files changed in HEAD
+                        > local     files changed locally but not upstream
+  -c, --check           don't write changes, just print the files that would be
+                        formatted
+  --line-length N       max characters per line (default: $MAX_LINE_LENGTH |
+                        100)
+  --commit [ARG [ARG ...]]
+                        commit files that were formatted. one or more args can
+                        be given to change this behavior:
+                        > patch   commit files with --patch
+                        > amend   commit files with --amend
+                        > all     commit all selected files, whether or not
+                                  they were formatted
+  --commit-msg [MSG [MSG ...]]
+                        auto-commit changes. if args are given, they are
+                        concatenated to form the commit message. otherwise the
+                        current commit's log message is reused. if --commit is
+                        not present, a naked `--commit` is implied.
+  --extra-isort-args ARGS
                         additional args to pass to isort
-  --extra-black-args EXTRA_BLACK_ARGS
+  --extra-black-args ARGS
                         additional args to pass to black
 ```
 

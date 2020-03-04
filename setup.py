@@ -16,7 +16,7 @@ def requirements():
 
 setup(
     name="pyfmt",
-    version="1.0.0",
+    version="2.0.0",
     license="MIT",
     url="https://github.com/GooeeIOT/pyfmt",
     description="Python auto-formatting using isort and black.",
