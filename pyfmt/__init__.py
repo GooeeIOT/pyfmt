@@ -109,7 +109,7 @@ def run_formatter(cmd, path, **kwargs) -> Tuple[List[str], int]:
 
     prefix = f"{cmd[0]}: "
     sep = "\n" + (" " * len(prefix))
-    lines = result.stderr.decode().splitlines()
+    lines = result.stdout.decode().splitlines() + result.stderr.decode().splitlines()
 
     # Remove fluff from black's output.
     if cmd[0] == "black" and result.returncode == 0:
