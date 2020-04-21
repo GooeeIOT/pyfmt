@@ -38,7 +38,7 @@ SELECTOR_MAP = {
 
 
 def pyfmt(
-    path: str,
+    paths: List[str],
     selector: str = "all",
     line_length: int = 100,
     check: bool = False,
@@ -50,9 +50,9 @@ def pyfmt(
     """Run isort and black with the given params and print the results."""
     # Filter path according to given ``selector``.
     select_files = SELECTOR_MAP[selector]
-    files = tuple(select_files(path))
+    files = tuple(select_files(paths))
     if not files:
-        print("No files need formatting.")
+        print("No files were selected.")
         return 0
 
     if check:

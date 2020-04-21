@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+import shlex
 import textwrap
 from typing import Mapping, Optional
 
@@ -39,15 +40,29 @@ class FormattedHelpArgumentParser(argparse.ArgumentParser):
         - Wrap ``help`` (``argparse.RawTextHelpFormatter`` doesn't auto-wrap help text).
 
         :param envvar:
-            Name of an environment variable to use as the default value. If a ``default`` is also
-            given, it will be used as a fallback if the env var isn't set. If no ``default`` is
-            given _and_ the env var isn't set, a ValueError will be raised.
+            Name of an environment variable to use as the default value.
+
+            If a ``default`` is also given, it will be used as a fallback if the env var isn't set.
+            If no ``default`` is given _and_ the env var isn't set, a ValueError will be raised.
+
+            If the argument stores a list of values, the environment variable will be parsed into a
+            list using `shlex.split`.
         """
+        # If `envvar` given, set argument `default` to its value if set.
         if envvar:
             val = os.getenv(envvar)
             if val:
                 type_func = kwargs.get("type") or str
-                kwargs["default"] = type_func(val)
+                nargs = kwargs.get("nargs")
+                # If argument stores a list, parse envvar as a list.
+                if (
+                    nargs
+                    and (nargs in ("*", "+") or isinstance(nargs, int))
+                    or kwargs.get("action") in ("append", "append_const", "extend")
+                ):
+                    kwargs["default"] = [type_func(item) for item in shlex.split(val)]
+                else:
+                    kwargs["default"] = type_func(val)
             elif "default" not in kwargs:
                 raise ValueError(f"`envvar` ${envvar} not found, and no `default` was given")
 

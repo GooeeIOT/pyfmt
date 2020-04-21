@@ -9,7 +9,8 @@ SELECT_CHOICES = {
     "staged": "files in the index",
     "modified": "files in the index, working tree, and untracked files",
     "head": "files changed in HEAD",
-    "local": "files changed locally but not upstream",
+    "local": "files changed locally but not upstream;"
+    " if upstream branch is missing, fallback to `all`",
 }
 
 COMMIT_CHOICES = {
@@ -23,11 +24,11 @@ def main():
     parser = FormattedHelpArgumentParser(prog="pyfmt")
     parser.add_argument(
         "path",
-        nargs="?",
+        nargs="*",
         envvar="BASE_CODE_DIR",
-        default=".",
+        default=["."],
         metavar="PATH",
-        help="path to base directory where pyfmt will be run",
+        help="file and directory paths where pyfmt will be run",
     )
     parser.add_choices_argument(
         "-x",

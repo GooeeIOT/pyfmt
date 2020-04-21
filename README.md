@@ -57,11 +57,11 @@ since these options are all reliant on the status of your git working tree and i
 usage: pyfmt [-h] [-x SELECT] [-c] [--line-length N]
              [--commit [ARG [ARG ...]]] [--commit-msg [MSG [MSG ...]]]
              [--extra-isort-args ARGS] [--extra-black-args ARGS]
-             [PATH]
+             [PATH [PATH ...]]
 
 positional arguments:
-  PATH                  path to base directory where pyfmt will be run
-                        (default: $BASE_CODE_DIR | '.')
+  PATH                  file and directory paths where pyfmt will be run
+                        (default: $BASE_CODE_DIR | ['.'])
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -72,7 +72,9 @@ optional arguments:
                         > modified  files in the index, working tree, and
                                     untracked files
                         > head      files changed in HEAD
-                        > local     files changed locally but not upstream
+                        > local     files changed locally but not upstream; if
+                                    upstream branch is missing,
+                                    fallback to `all`
   -c, --check           don't write changes, just print the files that would be
                         formatted
   --line-length N       max characters per line (default: $MAX_LINE_LENGTH |
